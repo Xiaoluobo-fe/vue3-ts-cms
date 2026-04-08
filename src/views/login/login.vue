@@ -6,24 +6,31 @@
         <h2 class="login-title">欢迎登录</h2>
 
         <!-- 登录表单 -->
-        <el-form class="login-form">
+        <el-form
+          class="login-form"
+          ref="formRef"
+          :model="loginForm"
+          :rules="rules"
+        >
           <!-- 用户名 -->
-          <el-form-item>
+          <el-form-item prop="userName">
             <el-input
               placeholder="请输入用户名"
-              prefix-icon="User"
+              :prefix-icon="userIcon"
               size="large"
+              v-model="loginForm.userName"
             />
           </el-form-item>
 
           <!-- 密码 -->
-          <el-form-item>
+          <el-form-item prop="password">
             <el-input
               type="password"
               placeholder="请输入密码"
-              prefix-icon="Lock"
+              :prefix-icon="lockIcon"
               show-password
               size="large"
+              v-model="loginForm.password"
             />
           </el-form-item>
 
@@ -34,6 +41,7 @@
               size="large"
               class="login-btn"
               :loading="loading"
+              @click="handleLogin"
             >
               登 录
             </el-button>
@@ -44,14 +52,58 @@
   </div>
 </template>
 
-<script>
-import { ref } from 'vue'
+<script lang="ts">
+import { reactive, ref } from 'vue'
+import { loginUser } from '@/api/login/login'
+import type { FormInstance } from 'element-plus'
+import { User, Lock } from '@element-plus/icons-vue'
+import saveInfo from '@/hooks/useLocalStory'
 export default {
   setup() {
     const loading = ref(false)
+    const loginForm = reactive({
+      userName: '',
+      password: ''
+    })
+    const formRef = ref<FormInstance>()
+    const rules = reactive({
+      userName: [
+        {
+          required: true,
+          message: '请输入用户名',
+          trigger: 'blur'
+        }
+      ],
+      password: [
+        {
+          required: true,
+          message: '请输入密码',
+          trigger: 'blur'
+        }
+      ]
+    })
+    const userIcon = User
+    const lockIcon = Lock
 
+    const handleLogin = () => {
+      formRef.value?.validate((valid) => {
+        if (valid) {
+          loginUser(loginForm).then((res) => {
+            if (res.data) {
+              saveInfo('accessToken', res.data.data.token.accessToken)
+            }
+          })
+        }
+      })
+    }
     return {
-      loading
+      loading,
+      loginForm,
+      formRef,
+      rules,
+      userIcon,
+      lockIcon,
+      handleLogin
     }
   }
 }
